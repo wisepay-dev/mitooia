@@ -25,41 +25,56 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
   const [reveal, setReveal] = useState(false);
 
   useEffect(() => {
-    let interval: any;
+    let interval: NodeJS.Timeout;
     
     const fetchStatus = async () => {
       try {
         const res = await fetch(`/api/status/${id}`);
-        if (!res.ok) {
-          setError('Pedido não encontrado');
-          setLoading(false);
-          return;
-        }
         const data = await res.json();
+        
+        if (!data.success) {
+          if (data.error === 'ORDER_NOT_FOUND') {
+            setError('Pedido não encontrado.');
+            setLoading(false);
+            clearInterval(interval);
+            return;
+          }
+          if (data.status === 'FAILED') {
+            setError('Falha na geração: ' + (data.error || 'Erro desconhecido.'));
+            setLoading(false);
+            clearInterval(interval);
+            return;
+          }
+        }
+        
         setOrder(data);
         
         if (data.status === 'COMPLETED') {
           setLoading(false);
-          // Trigger reveal animation
+          clearInterval(interval);
           setTimeout(() => setReveal(true), 100);
         } else if (data.status === 'FAILED') {
-          setError('Falha na geração');
+          setError('Falha na geração: ' + (data.error || 'Erro desconhecido.'));
           setLoading(false);
+          clearInterval(interval);
+        } else if (data.status === 'PENDING' || data.status === 'PROCESSING') {
+          // Keep polling
         }
       } catch (e) {
         setError('Erro de conexão');
         setLoading(false);
+        clearInterval(interval);
       }
     };
 
     fetchStatus();
 
-    // Setup polling if generating
+    // Polling between 1.5s to 2.5s
     interval = setInterval(() => {
       if (loading) {
         fetchStatus();
       }
-    }, 3000);
+    }, 2000);
 
     return () => clearInterval(interval);
   }, [id, loading]);
@@ -129,7 +144,9 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
     return (
       <div className={styles.loadingContainer}>
         <div className="spinner" style={{width: 64, height: 64, marginBottom: '32px'}}></div>
-        <h1 className={styles.loadingTitle}>Criando sua foto...</h1>
+        <h1 className={styles.loadingTitle}>
+          {order?.status === 'PENDING' ? 'Preparando sua geração...' : 'Criando sua foto com IA...'}
+        </h1>
         
         <div className={styles.stepsList}>
           {LOADING_STEPS.map((step, index) => (

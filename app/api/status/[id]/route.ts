@@ -3,26 +3,51 @@ import prisma from '@/app/lib/prisma';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id: generationId } = await params;
-    if (!generationId) {
+    const { id: orderId } = await params;
+    if (!orderId) {
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
     }
 
-    const generation = await prisma.generation.findUnique({
-      where: { id: generationId }
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        generations: {
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
     });
 
-    if (!generation) {
-      return NextResponse.json({ error: 'Geração não encontrada' }, { status: 404 });
+    if (!order) {
+      return NextResponse.json({ success: false, error: 'ORDER_NOT_FOUND' }, { status: 404 });
     }
 
-    // Always proxy the image through our API, so the frontend never gets a raw private Blob URL or Local path
-    let url = generation.imageUrl ? `/api/images/${generation.id}` : null;
+    const generation = order.generations[0];
 
-    return NextResponse.json({
-      status: generation.status,
-      imageUrl: url
-    });
+    if (!generation || generation.status === 'READY') {
+      return NextResponse.json({ success: true, status: 'PENDING' }, { status: 200 });
+    }
+
+    if (generation.status === 'PROCESSING') {
+      return NextResponse.json({ success: true, status: 'PROCESSING' }, { status: 200 });
+    }
+
+    if (generation.status === 'FAILED') {
+      return NextResponse.json({ success: false, status: 'FAILED', error: 'IMAGE_PROVIDER_ERROR' }, { status: 200 });
+    }
+
+    if (generation.status === 'COMPLETED' || generation.status === 'SUCCESS') {
+      let url = generation.imageUrl ? `/api/images/${generation.id}` : null;
+      return NextResponse.json({
+        success: true,
+        status: 'COMPLETED',
+        hasResult: !!url,
+        imageUrl: url
+      }, { status: 200 });
+    }
+
+    // Default fallback
+    return NextResponse.json({ success: true, status: generation.status }, { status: 200 });
 
   } catch (error) {
     console.error('Status error:', error);
