@@ -68,30 +68,58 @@ export class YuvexPayProvider {
         response = await makeRequest(buildPayload(`order-${orderId}@mitooia.com.br`));
         
         if (!response.ok) {
-          console.error('YuvexPay API Error (Fallback):', await response.text());
+          const fallbackText = await response.text();
+          let fallbackData: any = {};
+          try { fallbackData = JSON.parse(fallbackText); } catch(e) {}
+          
+          console.error('[UVEX] payment creation failed', {
+            status: response.status,
+            error: fallbackData.error || fallbackText,
+            code: fallbackData.code
+          });
           throw new Error('Falha ao criar PIX na YuvexPay (Fallback)');
         }
       } else {
-        console.error('YuvexPay API Error:', errorText);
+        console.error('[UVEX] payment creation failed', {
+          status: response.status,
+          error: errorData?.error || errorText,
+          code: errorData?.code
+        });
         throw new Error('Falha ao criar PIX na YuvexPay');
       }
     }
 
     const data = await response.json();
     
-    // According to YuvexPay headless specs: methodData contains the PIX info
-    const pixCopyPaste = data.methodData?.pixCopyPaste;
-    const qrCodeBase64 = data.methodData?.qrCodeBase64;
+    console.info("[YUVEX] response", {
+      httpStatus: response.status,
+      hasPayment: !!data?.payment,
+      paymentId: data?.payment?.id,
+      status: data?.payment?.status,
+      paymentMethod: data?.payment?.paymentMethod,
+      hasMethodData: !!data?.payment?.methodData,
+      hasPixCopyPaste: !!data?.payment?.methodData?.pixCopyPaste,
+      hasQrCodeBase64: !!data?.payment?.methodData?.qrCodeBase64
+    });
+
+    const payment = data.payment;
+    
+    if (!payment) {
+      throw new Error('Resposta YuvexPay não contém objeto payment');
+    }
+
+    const pixCopyPaste = payment?.methodData?.pixCopyPaste;
+    const qrCodeBase64 = payment?.methodData?.qrCodeBase64;
     
     if (!pixCopyPaste) {
       throw new Error('Resposta YuvexPay não contém pixCopyPaste');
     }
 
     return {
-      id: data.id,
+      id: payment.id,
       qrCode: pixCopyPaste,
       qrCodeBase64: qrCodeBase64 || '', // Some gateways return the raw base64 or prefixed with data:image/png;base64,
-      status: data.status || 'NEW'
+      status: payment.status || 'NEW'
     };
   }
 }
