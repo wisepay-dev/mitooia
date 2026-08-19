@@ -45,20 +45,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Internal configuration error' }, { status: 500 });
     }
 
-    const timestampSeconds = parseInt(timestampStr, 10);
-    if (isNaN(timestampSeconds)) {
-      logRejection('INVALID_TIMESTAMP');
-      return NextResponse.json({ error: 'Invalid timestamp' }, { status: 400 });
+    const timestampHeader = req.headers.get('X-Webhook-Timestamp');
+    if (!timestampHeader) {
+      logRejection('MISSING_TIMESTAMP');
+      return NextResponse.json({ error: 'Missing webhook timestamp' }, { status: 400 });
     }
 
-    const timestampMs = timestampSeconds * 1000;
-    const now = Date.now();
+    const webhookTimestamp = Number(timestampHeader);
 
-    // 1. Replay Protection
-    if (Math.abs(now - timestampMs) > MAX_REPLAY_WINDOW_MS) {
+    if (!Number.isFinite(webhookTimestamp) || webhookTimestamp <= 0) {
+      logRejection('INVALID_TIMESTAMP');
+      return NextResponse.json({ error: 'Invalid webhook timestamp' }, { status: 400 });
+    }
+
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const driftSeconds = Math.abs(nowSeconds - webhookTimestamp);
+
+    console.info("[WEBHOOK YUVEX] timestamp check", {
+      nowSeconds,
+      webhookTimestamp,
+      driftSeconds
+    });
+
+    if (driftSeconds > 300) {
+      console.warn("[WEBHOOK YUVEX] timestamp rejected", {
+        driftSeconds
+      });
       logRejection('INVALID_TIMESTAMP'); // Or replay protection
       return NextResponse.json({ error: 'Webhook timestamp expired (replay protection)' }, { status: 400 });
     }
+
+    // Assign back to variables used later
+    timestampStr = timestampHeader;
 
     // 2. Signature Verification
     const signedPayload = `${timestampStr}.${rawBody}`;
