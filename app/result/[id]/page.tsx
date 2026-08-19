@@ -91,40 +91,55 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
     return () => clearInterval(stepInterval);
   }, [loading]);
 
+  const protectedImageUrl = `/api/result/${id}/image`;
+
   const handleDownload = async () => {
-    if (!order?.resultUrl) return;
     try {
       console.log('[TRACKER EVENT]: download_clicked', { orderId: id });
-      const res = await fetch(order.resultUrl);
+      const res = await fetch(protectedImageUrl);
+      if (!res.ok) throw new Error('Falha ao baixar imagem');
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `mito-ia-${id}.jpg`;
+      a.download = `mito-ia-${id}.png`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
     } catch (e) {
-      alert('Erro ao baixar');
+      alert('Erro ao baixar. Tente novamente mais tarde.');
     }
   };
 
   const handleShare = async () => {
-    if (!order?.resultUrl) return;
     console.log('[TRACKER EVENT]: share_clicked', { orderId: id });
-    if (navigator.share) {
-      try {
+    try {
+      const res = await fetch(protectedImageUrl);
+      if (!res.ok) throw new Error('Falha ao baixar imagem para compartilhamento');
+      const blob = await res.blob();
+      
+      const file = new File([blob], `mito-ia-${id}.png`, { type: blob.type });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: 'Minha foto no MITO.IA',
+          text: 'Fiz uma foto temática usando IA! Veja:',
+        });
+      } else if (navigator.share) {
+        // Fallback to URL if file sharing is not supported
         await navigator.share({
           title: 'Minha foto no MITO.IA',
           text: 'Fiz uma foto temática usando IA! Veja:',
-          url: window.location.href, // Sharing the current page or a public link if implemented
+          url: window.location.href,
         });
-      } catch (err) {
-        console.error('Erro ao compartilhar', err);
+      } else {
+        alert('Compartilhamento nativo não suportado neste dispositivo. Use o botão de baixar.');
       }
-    } else {
-      alert('Compartilhamento não suportado neste navegador.');
+    } catch (err) {
+      console.error('Erro ao compartilhar', err);
+      alert('Não foi possível compartilhar a imagem. Tente baixar a foto.');
     }
   };
 
@@ -169,7 +184,16 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
       <p className={styles.subtitle}>Sua criação temática exclusiva.</p>
       
       <div className={`${styles.imageWrapper} ${reveal ? styles.revealed : ''}`}>
-        <img src={order.resultUrl} alt="Resultado IA" className={styles.resultImage} />
+        <img 
+          src={protectedImageUrl} 
+          alt="Sua foto gerada por IA" 
+          className={styles.resultImage} 
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.onerror = null; // prevents loop
+            setError("Não foi possível carregar sua foto. Tente atualizar a página.");
+          }}
+        />
         <div className={styles.watermark}>GERADO POR IA</div>
       </div>
 
