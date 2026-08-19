@@ -90,7 +90,10 @@ export class ImageGenerationProvider {
       if (!b64Data) throw new Error('No image data returned');
 
       const buffer = Buffer.from(b64Data, 'base64');
-      const internalUrl = await StorageProvider.saveUpload(buffer, 'image/png');
+      const storageResult = await StorageProvider.saveUpload(buffer, 'image/png');
+      const internalUrl = storageResult.storageProvider === 'local' 
+        ? `local://${storageResult.storageKey}` 
+        : (storageResult.blobUrl || '');
 
       return {
         imageUrl: internalUrl,

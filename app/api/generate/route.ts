@@ -46,7 +46,11 @@ export async function POST(req: NextRequest) {
     });
 
     // Recupera a foto enviada
-    const uploadBuffer = await StorageProvider.getUploadBuffer(generation.upload.url);
+    const uploadBuffer = await StorageProvider.getUploadBufferByProvider(
+      generation.upload.storageProvider,
+      generation.upload.storageKey,
+      generation.upload.blobUrl
+    );
 
     // Geração
     const result = await ImageGenerationProvider.generate({

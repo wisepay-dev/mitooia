@@ -26,15 +26,23 @@ export async function POST(req: NextRequest) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
     
-    // Save locally
-    const internalUrl = await StorageProvider.saveUpload(buffer, file.type);
+    // Save to storage
+    const storageResult = await StorageProvider.saveUpload(buffer, file.type);
+
+    const expiresAt = new Date();
+    const retentionHours = parseInt(process.env.UPLOAD_RETENTION_HOURS || '24', 10);
+    expiresAt.setHours(expiresAt.getHours() + retentionHours);
 
     // Save to DB
     const upload = await prisma.upload.create({
       data: {
-        url: internalUrl,
+        storageProvider: storageResult.storageProvider,
+        storageKey: storageResult.storageKey,
+        blobUrl: storageResult.blobUrl,
         mimeType: file.type,
-        status: 'PENDING'
+        size: file.size,
+        status: 'PENDING',
+        expiresAt
       }
     });
 

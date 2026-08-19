@@ -60,14 +60,18 @@ model WebhookEvent {
 
 model Upload {
   id               String            @id @default(cuid())
-  url              String            // Local or S3 path
+  storageProvider  String            @default("local") // local, vercel-blob
+  storageKey       String
+  blobUrl          String?
   mimeType         String
+  size             Int               @default(0)
   status           String            @default("PENDING") // PENDING, PROCESSED, ERROR
   
   generations      Generation[]
   
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+  expiresAt        DateTime?
 }
 
 model GenerationCredit {

@@ -1,39 +1,39 @@
-import fs from 'fs/promises';
-import path from 'path';
-import crypto from 'crypto';
+import { LocalStorageProvider } from './LocalStorageProvider';
+import { VercelBlobStorageProvider } from './VercelBlobStorageProvider';
 
 export class StorageProvider {
-  private static storageDir = path.join(process.cwd(), 'storage', 'uploads');
-
-  static async init() {
-    try {
-      await fs.mkdir(this.storageDir, { recursive: true });
-    } catch (e) {
-      console.error('Failed to create storage directory', e);
+  private static getProvider() {
+    if (process.env.STORAGE_PROVIDER === 'vercel-blob') {
+      return VercelBlobStorageProvider;
     }
+    return LocalStorageProvider;
   }
 
-  static async saveUpload(buffer: Buffer, mimeType: string): Promise<string> {
-    await this.init();
-    
-    const extension = mimeType.split('/')[1] || 'jpg';
-    const filename = `${crypto.randomUUID()}.${extension}`;
-    const filePath = path.join(/*turbopackIgnore: true*/ this.storageDir, filename);
-    
-    await fs.writeFile(filePath, buffer);
-    
-    // Returns an internal reference path, NOT a public URL
-    return `local://${filename}`;
+  static async saveUpload(buffer: Buffer, mimeType: string): Promise<{ storageProvider: string, storageKey: string, blobUrl: string | null }> {
+    return this.getProvider().saveUpload(buffer, mimeType);
   }
 
-  static async getUploadBuffer(internalUrl: string): Promise<Buffer> {
-    if (!internalUrl.startsWith('local://')) {
-      throw new Error('Invalid internal URL format');
+  static async getUploadBuffer(storageKey: string, blobUrl?: string | null): Promise<Buffer> {
+    const provider = this.getProvider();
+    // In case the DB has a vercel-blob but env says local (or vice versa),
+    // we should ideally use the provider specified in the storageProvider parameter.
+    // However, for simplicity and to match the interface, let's determine dynamically if possible, or just rely on env.
+    // Actually, to be safer, let's take storageProvider as a parameter.
+    return provider.getUploadBuffer(storageKey, blobUrl || undefined);
+  }
+
+  // Overload to explicitly fetch based on the DB record's provider
+  static async getUploadBufferByProvider(providerName: string, storageKey: string, blobUrl?: string | null): Promise<Buffer> {
+    if (providerName === 'vercel-blob') {
+      return VercelBlobStorageProvider.getUploadBuffer(storageKey, blobUrl || undefined);
     }
-    
-    const filename = internalUrl.replace('local://', '');
-    const filePath = path.join(this.storageDir, filename);
-    
-    return fs.readFile(filePath);
+    return LocalStorageProvider.getUploadBuffer(storageKey, blobUrl || undefined);
+  }
+
+  static async deleteUploadByProvider(providerName: string, storageKey: string, blobUrl?: string | null): Promise<void> {
+    if (providerName === 'vercel-blob') {
+      return VercelBlobStorageProvider.deleteUpload(storageKey, blobUrl || undefined);
+    }
+    return LocalStorageProvider.deleteUpload(storageKey, blobUrl || undefined);
   }
 }
