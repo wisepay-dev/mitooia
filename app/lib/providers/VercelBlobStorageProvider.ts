@@ -1,4 +1,4 @@
-import { put, del } from '@vercel/blob';
+import { put, del, get } from '@vercel/blob';
 import crypto from 'crypto';
 
 export class VercelBlobStorageProvider {
@@ -19,10 +19,19 @@ export class VercelBlobStorageProvider {
   }
 
   static async getUploadBuffer(storageKey: string, blobUrl?: string): Promise<Buffer> {
-    if (!blobUrl) throw new Error('Vercel Blob URL is missing');
-    const response = await fetch(blobUrl);
-    if (!response.ok) throw new Error(`Failed to fetch blob: ${response.statusText}`);
-    const arrayBuffer = await response.arrayBuffer();
+    const target = blobUrl || storageKey;
+    if (!target) throw new Error('Vercel Blob URL or Key is missing');
+    
+    const result = await get(target, {
+      access: 'private',
+      token: process.env.BLOB_READ_WRITE_TOKEN
+    });
+
+    if (!result || !result.stream) {
+      throw new Error('Failed to fetch blob or stream is null');
+    }
+
+    const arrayBuffer = await new Response(result.stream).arrayBuffer();
     return Buffer.from(arrayBuffer);
   }
 
