@@ -1,0 +1,211 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  padding: 24px;
+  text-align: center;
+}
+
+.progressContainer {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 16px 24px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: #555;
+  margin-bottom: 32px;
+}
+
+.progressStep {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.progressActive {
+  color: var(--foreground);
+}
+
+.progressDone {
+  color: var(--accent-green);
+}
+
+.main {
+  padding: 0 24px 64px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.header {
+  margin-bottom: 32px;
+}
+
+.title {
+  font-size: 2.25rem;
+  margin-bottom: 8px;
+  line-height: 1.1;
+}
+
+.subtitle {
+  color: #bbb;
+  font-size: 1.1rem;
+  margin-bottom: 16px;
+}
+
+.price {
+  font-size: 2.5rem;
+  font-weight: 900;
+  color: var(--accent-yellow);
+  line-height: 1;
+}
+
+.pixSection {
+  background: #050505;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.copyBtn {
+  width: 100%;
+  margin-bottom: 24px;
+  transition: all 0.2s;
+  font-size: 1.1rem !important;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.copyBtn.copied {
+  background: var(--accent-green);
+  color: #000;
+}
+
+.instructions {
+  text-align: left;
+  background: #111;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #ccc;
+  border-left: 3px solid var(--accent-green);
+}
+
+.instructions ol {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.instructions li {
+  margin-bottom: 8px;
+}
+
+.instructions li:last-child {
+  margin-bottom: 0;
+}
+
+.qrContainerDesktop {
+  margin-top: 32px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 24px 0;
+  color: #666;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #333;
+}
+
+.divider span {
+  padding: 0 16px;
+}
+
+.qrCode {
+  width: 180px;
+  height: 180px;
+  border-radius: 8px;
+  margin: 0 auto;
+  display: block;
+}
+
+.statusBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.spinIcon {
+  color: var(--accent-yellow);
+  animation: spin 3s linear infinite;
+}
+
+.statusText {
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.statusText strong {
+  display: block;
+  color: var(--foreground);
+}
+
+.statusText span {
+  color: #888;
+  font-size: 0.8rem;
+}
+
+.securitySeal {
+  font-size: 0.85rem;
+  color: #666;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+/* SUCCESS STATE */
+.successCard {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 40px rgba(0, 255, 102, 0.1);
+}
+
+.successIcon {
+  color: var(--accent-green);
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+@keyframes spin {
+  100% {
+    transform: rotate(360deg);
+  }
+}

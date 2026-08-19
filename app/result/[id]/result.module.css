@@ -1,0 +1,126 @@
+.container {
+  padding: 48px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+  line-height: 1.1;
+  color: var(--accent-yellow);
+}
+
+.subtitle {
+  color: #aaa;
+  font-size: 1.125rem;
+  margin-bottom: 32px;
+}
+
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/5;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,255,102,0.2);
+  margin-bottom: 32px;
+  
+  /* Initial State for Reveal */
+  filter: blur(20px) brightness(0.5);
+  transform: scale(0.95);
+  opacity: 0;
+  transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.imageWrapper.revealed {
+  filter: blur(0) brightness(1);
+  transform: scale(1);
+  opacity: 1;
+}
+
+.resultImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.watermark {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: var(--accent-green);
+  color: #000;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 900;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.actionGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 400px;
+}
+
+/* --- LOADING --- */
+.loadingContainer {
+  padding: 64px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 70vh;
+  justify-content: center;
+}
+
+.loadingTitle {
+  font-size: 1.5rem;
+  margin-bottom: 32px;
+}
+
+.stepsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 300px;
+  text-align: left;
+}
+
+.stepItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: var(--transition);
+}
+
+.stepPending {
+  color: #333;
+}
+
+.stepActive {
+  color: var(--foreground);
+}
+
+.stepDone {
+  color: #aaa;
+}
+
+.stepDot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

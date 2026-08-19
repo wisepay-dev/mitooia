@@ -1,0 +1,329 @@
+.progressContainer {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 16px 24px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: #555;
+  margin-bottom: 0;
+}
+
+.progressStep {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.progressActive {
+  color: var(--foreground);
+}
+
+.progressDone {
+  color: var(--accent-green);
+}
+
+.topBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background: #1a1a1a;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 32px;
+}
+
+.topBarLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.photoThumb {
+  width: 36px;
+  height: 36px;
+  background: #333;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+}
+
+.topBarTitle {
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: #ccc;
+}
+
+.topBarStatus {
+  font-size: 0.75rem;
+  color: var(--accent-green);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.topBarReset {
+  background: transparent;
+  border: 1px solid #444;
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.main {
+  padding: 0 24px 120px; /* Space for the sticky CTA */
+  max-width: 600px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.title {
+  font-size: 2.25rem;
+  margin-bottom: 8px;
+  line-height: 1.1;
+}
+
+.subtitle {
+  color: #bbb;
+  margin-bottom: 32px;
+  font-size: 1.1rem;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.catalogCard {
+  background: var(--card-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: left;
+}
+
+.catalogCard:hover {
+  border-color: #555;
+}
+
+.catalogCard.selected {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 24px rgba(0, 255, 102, 0.15);
+  transform: translateY(-2px);
+}
+
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #000;
+}
+
+.catalogImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.8;
+  transition: opacity 0.3s;
+}
+
+.catalogCard.selected .catalogImage {
+  opacity: 1;
+}
+
+.catalogOverlay {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+
+.cardContent {
+  padding: 16px;
+}
+
+.catalogName {
+  font-size: 1.25rem;
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+.catalogDesc {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin-bottom: 16px;
+}
+
+.selectionIndicator {
+  font-size: 0.9rem;
+  font-weight: 900;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.2s;
+}
+
+.selectionIndicator.selectionActive {
+  color: var(--accent-green);
+}
+
+.continueContainer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 24px;
+  background: linear-gradient(to top, rgba(0,0,0,1) 50%, rgba(0,0,0,0));
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  z-index: 100;
+}
+
+.continueContainer.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.continueBtn {
+  max-width: 400px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+}
+
+/* --- SUMMARY SCREEN --- */
+.summaryContainer {
+  text-align: left;
+  padding-bottom: 32px;
+}
+
+.backBtn {
+  background: transparent;
+  border: none;
+  color: #aaa;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-bottom: 24px;
+  padding: 8px 0;
+}
+
+.backBtn:hover {
+  color: #fff;
+}
+
+.summaryTitle {
+  font-size: 2.25rem;
+  margin-bottom: 8px;
+  line-height: 1.1;
+  color: var(--foreground);
+}
+
+.summarySubtitle {
+  color: #bbb;
+  margin-bottom: 32px;
+  font-size: 1.1rem;
+}
+
+.summaryBox {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.summaryRow {
+  margin-bottom: 16px;
+}
+
+.summaryItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.summaryThumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.summaryLabel {
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+.summaryValue {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.summaryDivider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 24px 0;
+}
+
+.summaryTotalRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.summaryTotal {
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--accent-yellow);
+  line-height: 1;
+}
+
+.trustBadges {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.trustBadges span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (min-width: 768px) {
+  .imageWrapper {
+    aspect-ratio: 4/3;
+  }
+}

@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Order {
+  id               String            @id @default(cuid())
+  status           String            @default("WAITING_PAYMENT") // WAITING_PAYMENT, PAID, FAILED
+  totalAmount      Int               // In cents, e.g., 490
+  currency         String            @default("BRL")
+  
+  // UTMs & Tracking
+  utmSource        String?
+  utmMedium        String?
+  utmCampaign      String?
+  utmContent       String?
+  utmTerm          String?
+  fbclid           String?
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  payments         Payment[]
+  credits          GenerationCredit[]
+  generations      Generation[]
+}
+
+model Payment {
+  id                String            @id @default(cuid())
+  orderId           String
+  provider          String            @default("YUVEXPAY")
+  providerPaymentId String?           @unique
+  providerTxId      String?
+  externalId        String?
+  status            String            @default("NEW") 
+  method            String            @default("PIX")
+  currency          String            @default("BRL")
+  amount            Float             // YuvexPay uses decimal, e.g. 4.90
+  
+  order             Order             @relation(fields: [orderId], references: [id])
+  
+  paidAt            DateTime?
+  expiresAt         DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+}
+
+model WebhookEvent {
+  id                String            @id @default(cuid())
+  provider          String            @default("YUVEXPAY")
+  deliveryId        String            @unique
+  eventType         String
+  payload           String?
+  
+  processedAt       DateTime          @default(now())
+}
+
+model Upload {
+  id               String            @id @default(cuid())
+  url              String            // Local or S3 path
+  mimeType         String
+  status           String            @default("PENDING") // PENDING, PROCESSED, ERROR
+  
+  generations      Generation[]
+  
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model GenerationCredit {
+  id               String            @id @default(cuid())
+  orderId          String
+  amount           Int               @default(1)
+  used             Int               @default(0)
+  
+  order            Order             @relation(fields: [orderId], references: [id])
+  
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model Generation {
+  id               String            @id @default(cuid())
+  orderId          String
+  uploadId         String
+  scenarioId       String            // Enum/Const in code
+  
+  status           String            @default("READY") // READY, PROCESSING, COMPLETED, FAILED, BLOCKED, EXPIRED
+  imageUrl         String?           // Final result URL
+  
+  estimatedCostUsd Float?
+  
+  order            Order             @relation(fields: [orderId], references: [id])
+  upload           Upload            @relation(fields: [uploadId], references: [id])
+  
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model AnalyticsEvent {
+  id               String            @id @default(cuid())
+  eventName        String
+  payload          String?           // JSON string
+  
+  createdAt        DateTime          @default(now())
+}

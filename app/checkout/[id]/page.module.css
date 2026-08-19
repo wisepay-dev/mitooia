@@ -1,0 +1,60 @@
+.main {
+  padding: 2rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--accent-yellow);
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: 2rem;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 350px;
+}
+
+.qrCodeBox {
+  background: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+}
+
+.qrCodeBox img {
+  width: 100%;
+  height: auto;
+}
+
+.copyBtn {
+  background: var(--accent-green);
+  color: #000;
+  font-weight: bold;
+  padding: 12px;
+  border-radius: 8px;
+  width: 100%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pollingText {
+  color: #aaa;
+  font-size: 0.9rem;
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
