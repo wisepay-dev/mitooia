@@ -123,10 +123,26 @@ export class ImageGenerationProvider {
         throw error;
       }
 
+      const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowedMimes.includes(input.mimeType)) {
+        const error = new Error(`Unsupported image format: ${input.mimeType}. Supported formats: image/jpeg, image/png, image/webp.`);
+        (error as any).code = 'GENERATION_INPUT_UNSUPPORTED';
+        throw error;
+      }
+
       let response: any;
 
       if (capabilities.supportsImageEditing) {
-        const fileLike = await toFile(input.uploadBuffer, 'selfie.png');
+        const ext = input.mimeType.split('/')[1] || 'png';
+        const filename = `selfie.${ext}`;
+        const fileLike = await toFile(input.uploadBuffer, filename, { type: input.mimeType });
+
+        console.log('[GENERATION FILELIKE]', {
+          orderId: input.orderId,
+          fileName: filename,
+          fileType: input.mimeType,
+          fileSize: input.uploadBuffer.length
+        });
         
         const requestPayload = {
           model: model,
