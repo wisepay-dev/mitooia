@@ -35,7 +35,10 @@ function CreateContent() {
   
   const [selectedScenario, setSelectedScenario] = useState<string>(funnelData?.scenarioId || '');
   const [showSummary, setShowSummary] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(true);
   const [loading, setLoading] = useState(false);
+  const uploadId = uploadIdFromUrl || funnelData?.uploadId;
 
   useEffect(() => {
     trackEvent('scenario_viewed', { uploadId: uploadIdFromUrl });
@@ -180,10 +183,41 @@ function CreateContent() {
             <div className={styles.summaryBox}>
               <div className={styles.summaryRow}>
                 <div className={styles.summaryItem}>
-                  <div className={styles.summaryThumb} style={{background: '#333'}}><ImageIcon size={24} color="#888" /></div>
-                  <div>
+                  <div className={styles.summaryThumb} style={{background: '#333', position: 'relative', overflow: 'hidden'}}>
+                    {!previewError && uploadId ? (
+                      <>
+                        {previewLoading && (
+                          <div className="skeleton" style={{position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: '#444', animation: 'pulse 1.5s infinite'}} />
+                        )}
+                        <img 
+                          src={`/api/uploads/${uploadId}/preview`} 
+                          style={{width: '100%', height: '100%', objectFit: 'cover', display: previewLoading ? 'none' : 'block'}}
+                          alt="Sua foto"
+                          onLoad={() => setPreviewLoading(false)}
+                          onError={() => {
+                            setPreviewLoading(false);
+                            setPreviewError(true);
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%'}}>
+                        <ImageIcon size={24} color="#888" />
+                      </div>
+                    )}
+                  </div>
+                  <div style={{flex: 1}}>
                     <div className={styles.summaryLabel}>SUA FOTO</div>
-                    <div className={styles.summaryValue}>Upload ✓</div>
+                    {previewError ? (
+                      <div style={{fontSize: '0.8rem', color: '#ff4d4f', marginTop: '4px'}}>
+                        Não conseguimos carregar a prévia.
+                        <button onClick={handleReset} style={{display: 'block', background: 'none', border: 'none', color: 'var(--accent-green)', textDecoration: 'underline', padding: 0, marginTop: '4px', cursor: 'pointer', fontSize: '0.75rem'}}>
+                          TROCAR FOTO
+                        </button>
+                      </div>
+                    ) : (
+                      <div className={styles.summaryValue}>Upload ✓</div>
+                    )}
                   </div>
                 </div>
               </div>

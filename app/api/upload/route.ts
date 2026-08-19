@@ -48,11 +48,21 @@ export async function POST(req: NextRequest) {
 
     console.log('[UPLOAD] response sent with uploadId:', upload.id);
 
-    return NextResponse.json({ 
+    const response = NextResponse.json({ 
       success: true, 
       uploadId: upload.id,
       status: 'UPLOADED'
     });
+
+    // Set secure cookie to authorize preview endpoint
+    response.cookies.set(`upload_session_${upload.id}`, 'true', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax', // Use lax so it works on simple redirects within the app
+      maxAge: 60 * 60 * 24 * 7 // 7 days
+    });
+
+    return response;
 
   } catch (error) {
     console.error('Upload error:', error);
