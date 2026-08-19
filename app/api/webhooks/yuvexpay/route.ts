@@ -6,33 +6,63 @@ import prisma from '@/app/lib/prisma';
 const MAX_REPLAY_WINDOW_MS = 300 * 1000;
 
 export async function POST(req: NextRequest) {
-  try {
-    const rawBody = await req.text(); // Raw body is required for signature verification
-    const timestampStr = req.headers.get('X-Webhook-Timestamp');
-    const signature = req.headers.get('X-Webhook-Signature');
-    const deliveryId = req.headers.get('X-Webhook-Delivery-Id');
+  let rawBody = '';
+  let timestampStr = '';
+  let signature = '';
+  let deliveryId = '';
+  const secret = process.env.YUVEX_WEBHOOK_SECRET;
 
-    if (!timestampStr || !signature || !deliveryId) {
-      return NextResponse.json({ error: 'Missing security headers' }, { status: 400 });
+  const logRejection = (reason: string) => {
+    console.error('[WEBHOOK YUVEX] rejected', {
+      reason,
+      hasTimestamp: !!timestampStr,
+      hasSignature: !!signature,
+      hasDeliveryId: !!deliveryId,
+      hasSecret: !!secret
+    });
+  };
+
+  try {
+    rawBody = await req.text(); // Raw body is required for signature verification
+    timestampStr = req.headers.get('X-Webhook-Timestamp') || '';
+    signature = req.headers.get('X-Webhook-Signature') || '';
+    deliveryId = req.headers.get('X-Webhook-Delivery-Id') || '';
+
+    if (!timestampStr) {
+      logRejection('MISSING_TIMESTAMP');
+      return NextResponse.json({ error: 'Missing timestamp' }, { status: 400 });
+    }
+    if (!signature) {
+      logRejection('MISSING_SIGNATURE');
+      return NextResponse.json({ error: 'Missing signature' }, { status: 400 });
+    }
+    if (!deliveryId) {
+      logRejection('MISSING_DELIVERY_ID');
+      return NextResponse.json({ error: 'Missing delivery id' }, { status: 400 });
+    }
+    if (!secret) {
+      logRejection('MISSING_WEBHOOK_SECRET');
+      return NextResponse.json({ error: 'Internal configuration error' }, { status: 500 });
     }
 
-    const timestamp = parseInt(timestampStr, 10);
+    const timestampSeconds = parseInt(timestampStr, 10);
+    if (isNaN(timestampSeconds)) {
+      logRejection('INVALID_TIMESTAMP');
+      return NextResponse.json({ error: 'Invalid timestamp' }, { status: 400 });
+    }
+
+    const timestampMs = timestampSeconds * 1000;
     const now = Date.now();
 
     // 1. Replay Protection
-    if (Math.abs(now - timestamp) > MAX_REPLAY_WINDOW_MS) {
+    if (Math.abs(now - timestampMs) > MAX_REPLAY_WINDOW_MS) {
+      logRejection('INVALID_TIMESTAMP'); // Or replay protection
       return NextResponse.json({ error: 'Webhook timestamp expired (replay protection)' }, { status: 400 });
     }
 
     // 2. Signature Verification
-    const secret = process.env.YUVEX_WEBHOOK_SECRET;
-    if (!secret) {
-      console.error('CRITICAL: YUVEX_WEBHOOK_SECRET is not defined');
-      return NextResponse.json({ error: 'Internal configuration error' }, { status: 500 });
-    }
-
     const signedPayload = `${timestampStr}.${rawBody}`;
-    const expectedSignature = crypto
+    const expectedSignature = 'v1=' + crypto
       .createHmac('sha256', secret)
       .update(signedPayload)
       .digest('hex');
@@ -42,6 +72,7 @@ export async function POST(req: NextRequest) {
       expectedSignature.length !== signature.length ||
       !crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(signature))
     ) {
+      logRejection('INVALID_SIGNATURE');
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
     }
 
@@ -65,16 +96,32 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Parse Payload
-    const data = JSON.parse(rawBody);
-    const { event, data: paymentData } = data;
+    let data;
+    try {
+      data = JSON.parse(rawBody);
+    } catch (e) {
+      logRejection('INVALID_JSON');
+      return NextResponse.json({ error: 'Invalid JSON payload' }, { status: 400 });
+    }
+    
+    // As per user instructions, check if it's PAYMENT_PAID
+    // The exact JSON structure from YuvexPay might have event or type. The user said: "event.type === 'PAYMENT_PAID' e event.data.status === 'PAID'"
+    const eventType = data.type || data.event; 
+    const paymentData = data.data || data;
 
     // Update event type in the WebhookEvent record we just created
     await prisma.webhookEvent.update({
       where: { deliveryId },
-      data: { eventType: event }
+      data: { eventType: eventType || 'unknown' }
+    });
+    
+    console.info('[WEBHOOK YUVEX] verified', {
+      eventType,
+      deliveryId
     });
 
-    if (event !== 'PAYMENT_PAID') {
+    if (eventType !== 'PAYMENT_PAID') {
+      logRejection('INVALID_EVENT');
       // We acknowledge the webhook, but we don't act on other events yet for the MVP
       return NextResponse.json({ received: true });
     }
@@ -82,6 +129,7 @@ export async function POST(req: NextRequest) {
     // 5. Locate Payment & Validate amount
     const externalId = paymentData.externalId;
     if (!externalId) {
+      logRejection('INVALID_JSON'); // Missing externalId
       return NextResponse.json({ error: 'Missing externalId' }, { status: 400 });
     }
 
@@ -91,18 +139,20 @@ export async function POST(req: NextRequest) {
     });
 
     if (!order) {
+      logRejection('INVALID_JSON'); // Order not found, maybe invalid payload?
       return NextResponse.json({ error: 'Order not found' }, { status: 404 });
     }
 
     // CRITICAL: Amount validation. The paymentData.amount from YuvexPay is 4.90. Our order totalAmount is 490.
     const expectedAmount = 4.90;
     if (paymentData.amount !== expectedAmount || paymentData.currency !== 'BRL') {
-      console.error(`[YUVEXPAY WEBHOOK] Amount mismatch! Expected 4.90 BRL, got ${paymentData.amount} ${paymentData.currency}`);
+      logRejection('INVALID_EVENT'); // Amount mismatch
       return NextResponse.json({ error: 'Amount mismatch' }, { status: 400 });
     }
 
     // YuvexPay statuses: PAID means the money is fully credited
     if (paymentData.status !== 'PAID') {
+      logRejection('INVALID_EVENT'); // Not actually PAID
       return NextResponse.json({ error: 'Event mismatch: PAYMENT_PAID but status is not PAID' }, { status: 400 });
     }
 
@@ -134,7 +184,10 @@ export async function POST(req: NextRequest) {
           data: { status: 'READY' }
         })
       ]);
-      console.log(`[YUVEXPAY WEBHOOK] Order ${order.id} PAID. GenerationCredit created.`);
+      console.info('[WEBHOOK YUVEX] payment paid', {
+        orderId: order.id,
+        paymentId: paymentData.id
+      });
     } else {
       console.log(`[YUVEXPAY WEBHOOK] Order ${order.id} was already PAID. No extra credit generated.`);
     }
