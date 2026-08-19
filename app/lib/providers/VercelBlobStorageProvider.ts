@@ -7,7 +7,7 @@ export class VercelBlobStorageProvider {
     const filename = `uploads/${crypto.randomUUID()}.${extension}`;
     
     const { url, pathname } = await put(filename, buffer, {
-      access: 'public', // Blob URLs are usually public, but we shouldn't expose them if possible. Let's use public for now as there's no native "private" without premium plan in some cases, or we can just rely on the random UUID for security.
+      access: 'private',
       contentType: mimeType
     });
 
