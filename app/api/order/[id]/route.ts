@@ -22,8 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
     return NextResponse.json({
       status: order.status,
-      qrCode: payment?.status === 'pending' ? payment?.providerId /* No banco de dados real precisariamos armazenar a string base64 se quisermos renderizar qrcode real. 
-      Neste MVP, o create() já enviou o qrcode pro client. Aqui vamos apenas passar status. */ : null,
+      qrCode: (payment?.status === 'NEW' || payment?.status === 'PROCESSING') ? payment?.providerPaymentId : null,
       generationId: generation?.id
     });
 
