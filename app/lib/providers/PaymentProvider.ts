@@ -7,10 +7,10 @@ export class PaymentProvider {
    * Amount in internal representation is usually cents, but we pass cents to this method 
    * and internally divide by 100 since YuvexPay expects Decimal (4.90).
    */
-  static async createPixPayment(orderId: string, amountInCents: number, email: string): Promise<CreatePixResponse> {
+  static async createPixPayment(orderId: string, amountInCents: number): Promise<CreatePixResponse> {
     const amountInDecimal = amountInCents / 100;
     
     // Delegate to YuvexPay
-    return YuvexPayProvider.createPixPayment(orderId, amountInDecimal, email);
+    return YuvexPayProvider.createPixPayment(orderId, amountInDecimal);
   }
 }

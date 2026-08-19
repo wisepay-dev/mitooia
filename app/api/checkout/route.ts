@@ -5,12 +5,11 @@ import { PaymentProvider } from '@/app/lib/providers/PaymentProvider';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { uploadId, scenarioId, utmSource, utmMedium, utmCampaign, utmContent, fbclid, email } = body;
+    const { uploadId, scenarioId, utmSource, utmMedium, utmCampaign, utmContent, fbclid } = body;
 
     console.info("[CHECKOUT] request", {
       uploadId,
-      scenarioId,
-      hasEmail: !!email
+      scenarioId
     });
 
     if (!uploadId) {
@@ -21,11 +20,6 @@ export async function POST(req: NextRequest) {
     if (!scenarioId) {
       console.error("[CHECKOUT] rejected", { reason: "MISSING_SCENARIO_ID" });
       return NextResponse.json({ error: "MISSING_SCENARIO_ID", message: "scenarioId is required" }, { status: 400 });
-    }
-
-    if (!email) {
-      console.error("[CHECKOUT] rejected", { reason: "MISSING_EMAIL" });
-      return NextResponse.json({ error: "MISSING_EMAIL", message: "email is required" }, { status: 400 });
     }
 
     // Valida se o upload existe
@@ -47,8 +41,8 @@ export async function POST(req: NextRequest) {
       }
     });
 
-    // Cria a intenção de pagamento no provedor
-    const pixData = await PaymentProvider.createPixPayment(order.id, 490, email);
+    // Cria a intenção de pagamento no provedor sem email
+    const pixData = await PaymentProvider.createPixPayment(order.id, 490);
 
     // Salva o registro de pagamento atrelado à Order
     await prisma.payment.create({
