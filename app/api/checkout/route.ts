@@ -7,8 +7,25 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { uploadId, scenarioId, utmSource, utmMedium, utmCampaign, utmContent, fbclid, email } = body;
 
-    if (!uploadId || !scenarioId || !email) {
-      return NextResponse.json({ error: 'Parâmetros inválidos' }, { status: 400 });
+    console.info("[CHECKOUT] request", {
+      uploadId,
+      scenarioId,
+      hasEmail: !!email
+    });
+
+    if (!uploadId) {
+      console.error("[CHECKOUT] rejected", { reason: "MISSING_UPLOAD_ID" });
+      return NextResponse.json({ error: "MISSING_UPLOAD_ID", message: "uploadId is required" }, { status: 400 });
+    }
+
+    if (!scenarioId) {
+      console.error("[CHECKOUT] rejected", { reason: "MISSING_SCENARIO_ID" });
+      return NextResponse.json({ error: "MISSING_SCENARIO_ID", message: "scenarioId is required" }, { status: 400 });
+    }
+
+    if (!email) {
+      console.error("[CHECKOUT] rejected", { reason: "MISSING_EMAIL" });
+      return NextResponse.json({ error: "MISSING_EMAIL", message: "email is required" }, { status: 400 });
     }
 
     // Valida se o upload existe
