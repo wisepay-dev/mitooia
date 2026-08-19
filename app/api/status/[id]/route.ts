@@ -42,7 +42,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         success: true,
         status: 'COMPLETED',
         hasResult: !!url,
-        imageUrl: url
+        imageUrl: url,
+        generationId: generation.id,
+        version: generation.updatedAt.getTime()
       }, { status: 200 });
     }
 

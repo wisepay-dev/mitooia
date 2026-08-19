@@ -91,7 +91,8 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
     return () => clearInterval(stepInterval);
   }, [loading]);
 
-  const protectedImageUrl = `/api/result/${id}/image`;
+  const protectedImageUrl = `/api/result/${id}/image` + 
+    (order?.generationId ? `?g=${order.generationId}&v=${order.version}` : '');
 
   const handleDownload = async () => {
     try {

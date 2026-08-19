@@ -42,7 +42,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ file
       status: 200,
       headers: {
         'Content-Type': mimeType,
-        'Cache-Control': 'public, max-age=86400'
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
       }
     });
   } catch (error) {
