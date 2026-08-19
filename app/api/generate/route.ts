@@ -67,6 +67,8 @@ export async function POST(req: NextRequest) {
 
       // Geração
       result = await ImageGenerationProvider.generate({
+        orderId,
+        generationId: generation.id,
         uploadBuffer,
         mimeType: generation.upload.mimeType,
         scenario: generation.scenarioId as ScenarioTheme

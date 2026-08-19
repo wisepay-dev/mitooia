@@ -21,6 +21,8 @@ export type ScenarioTheme =
   | 'quadrinhos';
 
 interface GenerationInput {
+  orderId: string;
+  generationId: string;
   uploadBuffer: Buffer;
   mimeType: string;
   scenario: ScenarioTheme;
@@ -75,14 +77,52 @@ export class ImageGenerationProvider {
       // For the MVP, we will use `createVariation` or simply `createImage` with the prompt, as DALL-E 3 doesn't support image-to-image currently in the standard API (only text-to-image).
       // Let's implement text-to-image for safety, since face-swapping politicians is highly restricted.
       
+      const model = process.env.OPENAI_IMAGE_MODEL || 'dall-e-3';
       const prompt = this.getPromptForScenario(input.scenario);
+
+      console.log('[GENERATION INPUT]', {
+        orderId: input.orderId,
+        uploadId: 'from-provider', // The provider only receives the buffer, not the uploadId currently
+        hasUserImage: !!input.uploadBuffer,
+        userImageMime: input.mimeType,
+        userImageBytes: input.uploadBuffer?.length || 0,
+        scenarioKey: input.scenario
+      });
+
+      console.log('[GENERATION OPENAI REQUEST]', {
+        orderId: input.orderId,
+        model,
+        operation: 'images.generate',
+        scenarioKey: input.scenario,
+        hasUserImage: !!input.uploadBuffer,
+        userImageBytes: input.uploadBuffer?.length || 0,
+        inputImageCount: 1,
+        inputFidelity: 'high'
+      });
+
+      if (model === 'dall-e-3') {
+        // DALL-E 3 does not support image-to-image/face-swapping without a mask or specific endpoints
+        // Therefore, it drops the selfie and generates a random person.
+        // We must fail it so the user's credit is not burned on a random image.
+        const error = new Error('Model dall-e-3 does not support image input natively. Aborting to prevent random generation.');
+        (error as any).code = 'GENERATION_INPUT_MISSING';
+        throw error;
+      }
       
       const response = await openai.images.generate({
-        model: process.env.OPENAI_IMAGE_MODEL || 'dall-e-3',
+        model: model,
         prompt: prompt,
         n: 1,
         size: (process.env.OPENAI_IMAGE_SIZE as any) || '1024x1024',
         quality: (process.env.OPENAI_IMAGE_QUALITY as any) || 'standard'
+      });
+
+      console.log('[GENERATION OPENAI RESULT]', {
+        orderId: input.orderId,
+        generationId: input.generationId,
+        success: true,
+        hasImage: !!(response.data?.[0]?.b64_json || response.data?.[0]?.url),
+        providerRequestId: response.created
       });
 
       let buffer: Buffer;
