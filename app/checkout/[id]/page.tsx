@@ -16,6 +16,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [generating, setGenerating] = useState(false);
+  const [reconciling, setReconciling] = useState(false);
 
   useEffect(() => {
     trackEvent('checkout_viewed', { orderId: id });
@@ -98,6 +99,28 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
     } catch (e) {
       alert('Erro ao comunicar com IA. Tente novamente.');
       setGenerating(false);
+    }
+  };
+
+  const handleReconcile = async () => {
+    if (reconciling) return;
+    setReconciling(true);
+    
+    try {
+      const res = await fetch(`/api/order/${id}/reconcile`, {
+        method: 'POST'
+      });
+      const data = await res.json();
+      
+      if (data.success && data.paid) {
+        setOrder({ ...order, status: 'PAID' });
+      } else {
+        alert("Pagamento ainda não identificado. Aguarde alguns segundos.");
+      }
+    } catch (e) {
+      alert("Erro ao verificar pagamento.");
+    } finally {
+      setReconciling(false);
     }
   };
 
@@ -205,6 +228,14 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
                 <strong>Aguardando pagamento...</strong>
                 <span>Você não precisa recarregar a página.</span>
               </div>
+              <button 
+                className={styles.secondaryBtn} 
+                onClick={handleReconcile}
+                disabled={reconciling}
+                style={{ marginTop: '12px', fontSize: '0.85rem', padding: '8px 16px', background: 'transparent', border: '1px solid #444', borderRadius: '4px', color: '#fff', cursor: 'pointer' }}
+              >
+                {reconciling ? 'Verificando pagamento...' : 'Já paguei — verificar agora'}
+              </button>
             </div>
             
             <div className={styles.securitySeal}>

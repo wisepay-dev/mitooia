@@ -133,4 +133,44 @@ export class YuvexPayProvider {
       status: payment.status || 'NEW'
     };
   }
+
+  static async getPayment(providerPaymentId: string, expectedAmount: number): Promise<any> {
+    // Basic heuristic requested by the user: use LIVE key for real $4.90, SANDBOX for $4.01
+    const isLive = expectedAmount === 4.90;
+    const apiKey = isLive ? process.env.YUVEX_LIVE_API_KEY : process.env.YUVEX_API_KEY;
+
+    if (!apiKey) {
+      throw new Error(`Yuvex API Key não configurada para o ambiente (isLive: ${isLive})`);
+    }
+
+    const response = await fetch(`${this.API_URL}/payments/${providerPaymentId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[YUVEX RECONCILE] fetch failed', {
+        httpStatus: response.status,
+        providerPaymentId,
+        error: errorText
+      });
+      throw new Error(`Falha ao buscar pagamento YuvexPay: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const payment = data.payment || data;
+
+    console.info("[YUVEX RECONCILE] response", {
+      httpStatus: response.status,
+      hasPayment: !!payment,
+      providerPaymentId: payment?.id,
+      status: payment?.status
+    });
+
+    return payment;
+  }
 }
