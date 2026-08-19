@@ -9,7 +9,7 @@ import { useFunnelSession } from '../../hooks/useFunnelSession';
 export default function CheckoutPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
-  const { trackEvent } = useFunnelSession();
+  const { trackEvent, funnelData } = useFunnelSession();
   
   const [order, setOrder] = useState<any>(null);
   const [copied, setCopied] = useState(false);
@@ -64,11 +64,16 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
   }, [id, trackEvent]);
 
   const copyToClipboard = () => {
-    if (!order?.pixCode) return;
-    navigator.clipboard.writeText(order.pixCode);
-    setCopied(true);
-    trackEvent('pix_copied', { orderId: id });
-    setTimeout(() => setCopied(false), 3000);
+    const pixCopyPaste = order?.pixCopyPaste || funnelData?.pixCopyPaste;
+    if (!pixCopyPaste || pixCopyPaste.length === 0) return;
+    
+    navigator.clipboard.writeText(pixCopyPaste).then(() => {
+      setCopied(true);
+      trackEvent('pix_copied', { orderId: id });
+      setTimeout(() => setCopied(false), 3000);
+    }).catch(() => {
+      alert("Não foi possível copiar. Tente novamente.");
+    });
   };
 
   const handleGenerate = async () => {
@@ -178,14 +183,20 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
               </div>
 
               {/* SECONDARY: QR CODE FOR DESKTOP */}
-              {order.qrCodeBase64 && (
-                <div className={styles.qrContainerDesktop}>
-                  <div className={styles.divider}>
-                    <span>ou escaneie o QR Code</span>
+              {(() => {
+                const rawQrCode = order?.qrCodeBase64 || funnelData?.qrCodeBase64;
+                if (!rawQrCode) return null;
+                const qrSrc = rawQrCode.startsWith('data:image/') ? rawQrCode : `data:image/png;base64,${rawQrCode}`;
+                
+                return (
+                  <div className={styles.qrContainerDesktop}>
+                    <div className={styles.divider}>
+                      <span>ou escaneie o QR Code</span>
+                    </div>
+                    <img src={qrSrc} alt="QR Code PIX" className={styles.qrCode} />
                   </div>
-                  <img src={`data:image/png;base64,${order.qrCodeBase64}`} alt="QR Code PIX" className={styles.qrCode} />
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             <div className={styles.statusBox}>

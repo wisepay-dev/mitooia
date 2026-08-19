@@ -1,6 +1,6 @@
 export interface CreatePixResponse {
   id: string;
-  qrCode: string;
+  pixCopyPaste: string;
   qrCodeBase64: string;
   status: string;
 }
@@ -117,7 +117,7 @@ export class YuvexPayProvider {
 
     return {
       id: payment.id,
-      qrCode: pixCopyPaste,
+      pixCopyPaste: pixCopyPaste,
       qrCodeBase64: qrCodeBase64 || '', // Some gateways return the raw base64 or prefixed with data:image/png;base64,
       status: payment.status || 'NEW'
     };

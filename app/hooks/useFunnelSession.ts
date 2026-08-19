@@ -9,6 +9,8 @@ export interface FunnelData {
   orderId?: string;
   paymentId?: string;
   generationId?: string;
+  pixCopyPaste?: string;
+  qrCodeBase64?: string;
   utms: { [key: string]: string };
 }
 

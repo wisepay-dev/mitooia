@@ -70,7 +70,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ 
       success: true, 
       orderId: order.id,
-      qrCode: pixData.qrCode,
+      paymentId: pixData.id,
+      status: pixData.status,
+      pixCopyPaste: pixData.pixCopyPaste,
       qrCodeBase64: pixData.qrCodeBase64
     });
 

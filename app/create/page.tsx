@@ -80,7 +80,12 @@ function CreateContent() {
       const data = await res.json();
       
       if (data.orderId) {
-        updateFunnelData({ orderId: data.orderId });
+        updateFunnelData({ 
+          orderId: data.orderId,
+          paymentId: data.paymentId,
+          pixCopyPaste: data.pixCopyPaste,
+          qrCodeBase64: data.qrCodeBase64
+        });
         trackEvent('pix_created', { orderId: data.orderId });
         router.push(`/checkout/${data.orderId}`);
       } else {
