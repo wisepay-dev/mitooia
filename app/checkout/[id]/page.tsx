@@ -33,7 +33,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
         setOrder(data);
         setLoading(false);
 
-        if (data.status === 'APPROVED') {
+        if (data.status === 'APPROVED' || data.status === 'PAID') {
           trackEvent('payment_approved', { orderId: id });
         }
       } catch (e) {
@@ -51,7 +51,7 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
         if (res.ok) {
           const data = await res.json();
           setOrder(data);
-          if (data.status === 'APPROVED') {
+          if (data.status === 'APPROVED' || data.status === 'PAID') {
             clearInterval(interval);
             trackEvent('payment_approved', { orderId: id });
           }
@@ -114,6 +114,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
       
       if (data.success && data.paid) {
         setOrder({ ...order, status: 'PAID' });
+        trackEvent('payment_approved', { orderId: id });
+        // The UI will re-render, but we should also explicitly call handleGenerate
+        // since the user doesn't need to click anything else
+        handleGenerate();
       } else {
         alert("Pagamento ainda não identificado. Aguarde alguns segundos.");
       }
@@ -167,16 +171,16 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
         <div className={`${styles.progressStep} ${styles.progressDone}`}>
           <CheckCircle2 size={14} /> 02 CENÁRIO
         </div>
-        <div className={`${styles.progressStep} ${order.status === 'APPROVED' ? styles.progressDone : styles.progressActive}`}>
-          {order.status === 'APPROVED' ? <CheckCircle2 size={14} /> : ''} 03 PAGAMENTO
+        <div className={`${styles.progressStep} ${order.status === 'APPROVED' || order.status === 'PAID' ? styles.progressDone : styles.progressActive}`}>
+          {order.status === 'APPROVED' || order.status === 'PAID' ? <CheckCircle2 size={14} /> : ''} 03 PAGAMENTO
         </div>
-        <div className={`${styles.progressStep} ${order.status === 'APPROVED' ? styles.progressActive : ''}`}>
+        <div className={`${styles.progressStep} ${order.status === 'APPROVED' || order.status === 'PAID' ? styles.progressActive : ''}`}>
           04 RESULTADO
         </div>
       </div>
 
       <div className={styles.main}>
-        {order.status !== 'APPROVED' ? (
+        {order.status !== 'APPROVED' && order.status !== 'PAID' ? (
           <div className={`${styles.card} fade-in`}>
             <div className={styles.header}>
               <h1 className={styles.title}>QUASE LÁ.</h1>

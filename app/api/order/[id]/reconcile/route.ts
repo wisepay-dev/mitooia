@@ -21,7 +21,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     // 6. Se já estiver PAID, retornar sucesso sem executar de novo
     if (order.status === 'PAID' || order.status === 'COMPLETED') {
-      return NextResponse.json({ success: true, paid: true, status: 'PAID' });
+      return NextResponse.json({ 
+        success: true, 
+        paid: true, 
+        orderStatus: order.status,
+        generationCredit: order.credits.length
+      });
     }
 
     const payment = order.payments.find(p => p.provider === 'YUVEXPAY');
@@ -68,11 +73,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ 
         success: true, 
         paid: false, 
-        status: remotePayment.status || 'NEW' 
+        orderStatus: order.status,
+        generationCredit: order.credits.length
       });
     }
 
     // 6. Quando status for PAID
+    console.info('[YUVEX RECONCILE] before', {
+      orderId: order.id,
+      orderStatus: order.status,
+      paymentStatus: payment.status,
+      generationCreditCount: order.credits.length
+    });
+
     // Idempotent Release Transaction (same as webhook)
     await prisma.payment.updateMany({
       where: { id: payment.id },
@@ -102,7 +115,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       })
     ]);
 
-    return NextResponse.json({ success: true, paid: true, status: 'PAID' });
+    console.info('[YUVEX RECONCILE] after', {
+      orderId: order.id,
+      orderStatus: 'PAID',
+      paymentStatus: 'PAID',
+      generationCreditCount: Math.max(1, order.credits.length)
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      paid: true, 
+      orderStatus: 'PAID',
+      generationCredit: Math.max(1, order.credits.length)
+    });
 
   } catch (error) {
     console.error('Reconcile error:', error);
