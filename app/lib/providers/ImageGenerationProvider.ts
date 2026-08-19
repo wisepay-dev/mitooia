@@ -128,22 +128,18 @@ export class ImageGenerationProvider {
       if (capabilities.supportsImageEditing) {
         const fileLike = await toFile(input.uploadBuffer, 'selfie.png');
         
-        const requestPayload: any = {
+        const requestPayload = {
           model: model,
           image: fileLike,
           prompt: prompt,
           n: 1,
-          size: process.env.OPENAI_IMAGE_SIZE || '1024x1024',
-          quality: process.env.OPENAI_IMAGE_QUALITY || 'standard',
-          response_format: 'b64_json',
-          output_format: 'png'
+          size: (process.env.OPENAI_IMAGE_SIZE || '1024x1024') as any,
+          quality: (process.env.OPENAI_IMAGE_QUALITY || 'standard') as any,
+          output_format: 'png' as const,
+          ...(capabilities.supportsInputFidelity ? { input_fidelity: 'high' as const } : {})
         };
 
-        if (capabilities.supportsInputFidelity) {
-          requestPayload.input_fidelity = 'high';
-        }
-
-        response = await (openai.images as any).edit(requestPayload);
+        response = await openai.images.edit(requestPayload);
       } else {
         const error = new Error(`Model ${model} image input strategy not implemented.`);
         (error as any).code = 'GENERATION_INPUT_MISSING';
