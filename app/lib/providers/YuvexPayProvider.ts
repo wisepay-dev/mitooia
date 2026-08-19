@@ -18,11 +18,22 @@ export class YuvexPayProvider {
       throw new Error('YUVEX_API_KEY não configurada');
     }
 
+    const isSandbox =
+      process.env.YUVEX_ENVIRONMENT === "sandbox" ||
+      process.env.YUVEX_API_KEY?.startsWith("ypk_test_");
+
+    const paymentAmount = isSandbox ? 4.01 : 4.90;
+
+    console.info("[YUVEX] environment", {
+      environment: isSandbox ? "sandbox" : "production",
+      amount: paymentAmount
+    });
+
     const idempotencyKey = `mito-order-${orderId}`;
     
     const buildPayload = (fallbackEmail?: string) => {
       const payload: any = {
-        amount: amount,
+        amount: paymentAmount,
         methods: ['PIX'],
         currency: 'BRL',
         mode: 'headless',
