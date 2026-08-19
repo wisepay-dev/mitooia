@@ -16,11 +16,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Geração não encontrada' }, { status: 404 });
     }
 
-    let url = generation.imageUrl;
-    // Map local path to an API endpoint so the frontend can display it
-    if (url && url.startsWith('local://')) {
-      url = `/api/images/${url.replace('local://', '')}`;
-    }
+    // Always proxy the image through our API, so the frontend never gets a raw private Blob URL or Local path
+    let url = generation.imageUrl ? `/api/images/${generation.id}` : null;
 
     return NextResponse.json({
       status: generation.status,
