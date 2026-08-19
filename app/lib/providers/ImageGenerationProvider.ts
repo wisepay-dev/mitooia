@@ -82,14 +82,19 @@ export class ImageGenerationProvider {
         prompt: prompt,
         n: 1,
         size: (process.env.OPENAI_IMAGE_SIZE as any) || '1024x1024',
-        quality: (process.env.OPENAI_IMAGE_QUALITY as any) || 'standard',
-        response_format: 'b64_json'
+        quality: (process.env.OPENAI_IMAGE_QUALITY as any) || 'standard'
       });
 
-      const b64Data = response.data?.[0]?.b64_json;
-      if (!b64Data) throw new Error('No image data returned');
-
-      const buffer = Buffer.from(b64Data, 'base64');
+      let buffer: Buffer;
+      if (response.data?.[0]?.b64_json) {
+        buffer = Buffer.from(response.data[0].b64_json, 'base64');
+      } else if (response.data?.[0]?.url) {
+        const imgRes = await fetch(response.data[0].url);
+        if (!imgRes.ok) throw new Error('Falha ao baixar imagem da URL da OpenAI');
+        buffer = Buffer.from(await imgRes.arrayBuffer());
+      } else {
+        throw new Error('No image data returned from provider');
+      }
       const storageResult = await StorageProvider.saveUpload(buffer, 'image/png');
       const internalUrl = storageResult.storageProvider === 'local' 
         ? `local://${storageResult.storageKey}` 
@@ -105,19 +110,15 @@ export class ImageGenerationProvider {
       console.error('OpenAI Generation Error:', error);
       
       // Handle content policy violation
-      if (error?.error?.code === 'content_policy_violation') {
-        return {
-          imageUrl: '',
-          costUsd: 0,
-          status: 'BLOCKED'
-        };
+      if (error?.error?.code === 'content_policy_violation' || error?.code === 'content_policy_violation') {
+        const customError = new Error('Violates content policy');
+        (customError as any).code = 'content_policy_violation';
+        throw customError;
       }
 
-      return {
-        imageUrl: '',
-        costUsd: 0,
-        status: 'FAILED'
-      };
+      const customError = new Error(error?.message || 'Falha na comunicação com o provider');
+      (customError as any).code = 'IMAGE_PROVIDER_ERROR';
+      throw customError;
     }
   }
 }

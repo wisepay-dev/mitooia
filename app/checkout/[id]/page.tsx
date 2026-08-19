@@ -93,7 +93,15 @@ export default function CheckoutPage({ params }: { params: Promise<{ id: string 
       if (data.success) {
         router.push(`/result/${id}`);
       } else {
-        alert(data.error || 'Erro na geração');
+        let msg = data.message || data.error || 'Erro na geração';
+        if (data.code === 'IMAGE_PROVIDER_ERROR' || data.error === 'IMAGE_PROVIDER_ERROR') {
+          msg = "Não foi possível gerar sua imagem. Seu crédito foi mantido. Tente novamente.";
+        } else if (data.code === 'ORDER_NOT_FOUND') {
+          msg = "Pedido não encontrado.";
+        } else if (data.code === 'NO_CREDIT') {
+          msg = "Sem créditos disponíveis.";
+        }
+        alert(msg);
         setGenerating(false);
       }
     } catch (e) {
