@@ -135,7 +135,8 @@ export class ImageGenerationProvider {
           n: 1,
           size: process.env.OPENAI_IMAGE_SIZE || '1024x1024',
           quality: process.env.OPENAI_IMAGE_QUALITY || 'standard',
-          response_format: 'b64_json'
+          response_format: 'b64_json',
+          output_format: 'png'
         };
 
         if (capabilities.supportsInputFidelity) {
