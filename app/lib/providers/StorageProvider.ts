@@ -3,7 +3,7 @@ import { VercelBlobStorageProvider } from './VercelBlobStorageProvider';
 
 export class StorageProvider {
   private static getProvider() {
-    if (process.env.STORAGE_PROVIDER === 'vercel-blob') {
+    if (process.env.STORAGE_PROVIDER === 'vercel-blob' || process.env.NODE_ENV === 'production') {
       return VercelBlobStorageProvider;
     }
     return LocalStorageProvider;
